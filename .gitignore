@@ -3,3 +3,5 @@
 result/*
 *.swp
 *.un~
+Dicts/GaiaPasswd1.txt
+.gitignore~
