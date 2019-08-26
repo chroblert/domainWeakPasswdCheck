@@ -4,11 +4,25 @@ import kerberos
 from pyasn1.codec.ber import encoder, decoder
 from multiprocessing import Process, JoinableQueue, Manager
 import glob
+import sys
 
 wordlist = JoinableQueue()
 enctickets = None
 #ENDOFQUEUE = 'ENDOFQUEUEENDOFQUEUEENDOFQUEUE'
+class Logger(object):
+    def __init__(self, filename='run.log', stream=sys.stdout):
+	    self.terminal = stream
+	    self.log = open(filename, 'a')
 
+    def write(self, message):
+	    self.terminal.write(message)
+	    self.log.write(message)
+
+    def flush(self):
+	    pass
+
+sys.stdout = Logger("./result/info.log", sys.stdout)
+sys.stderr = Logger("./result/error.log", sys.stderr)		# redirect std err, if necessary
 
 def loadwordlist(wordlistfile, wordlistqueue, threadcount):
 	with open(wordlistfile, 'rb') as f:
