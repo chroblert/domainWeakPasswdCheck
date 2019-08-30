@@ -4,4 +4,6 @@ result/*
 *.swp
 *.un~
 Dicts/GaiaPasswd1.txt
+domainAccountCheck-v1.0/result/*
+domainAccountCheck-v2.0/result/*
 .gitignore~
