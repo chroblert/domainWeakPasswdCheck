@@ -7,3 +7,5 @@ Dicts/GaiaPasswd1.txt
 domainAccountCheck-v1.0/result/*
 domainAccountCheck-v2.0/result/*
 .gitignore~
+domainAccountCheck-v2.0/krbstHash.txt
+domainAccountCheck-v2.0/hashcat/hashcat.log
