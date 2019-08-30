@@ -1,6 +1,8 @@
 # domainWeakPasswdCheck
 
-# domainAccountCheck说明
+# domainAccountCheck-v2.0说明
+
+# domainAccountCheck-v1.0说明
 
 ## 文件说明
 
@@ -9,7 +11,7 @@
 > - domainWeakPasswdCheck 为主目录
 >   - `requirements.txt`:爆破时需用到python27环境，需要用到的一些包
 >   - `domainAccountCheck.ps1`:是运行的主程序
-> - Dicts 目录下是字典文件，将需要尝试的密码放进GaiaPasswd.txt文件中
+> - Dicts 目录下是字典文件，将需要尝试的密码放进JCPasswd.txt文件中
 > - kerberoast目录下是最后爆破需要用到的python文件
 > - mimikatz目录下是导出票据是要用到的工具，64位
 > - result目录下是包含运行产生的一些结果
