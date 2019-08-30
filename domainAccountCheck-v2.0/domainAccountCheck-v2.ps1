@@ -171,21 +171,21 @@ if(-Not (Test-Path ".\result")){
 	New-Item -ItemType Directory "result"
 }
 # menu
-Write-Host "======domainAcountCheck======"
-Write-Host "||      Author:JC          ||"
-Write-Host "||      Version:2.0.1      ||"
-Write-Host "============================="
-Write-Host "===         选项          ==="
-Write-Host "| 1 获取域内所有域用户账户"
-Write-Host "| 2 为域内的所有用户账户尝试注册SPN"
-Write-Host "| 3 获取现有SPN的凭据的Hash"
-Write-Host "| 4 爆破获得的Hash"
-Write-Host "| 5 删除注册的SPN"
-Write-Host "| 6 全部运行"
-Write-Host "| 0 EXIT"
 $krbstHashFile = ".\krbstHash.txt"
 $passwdDictFile = ".\Dicts\JCPasswd.txt"
 Do {
+	Write-Host "======domainAcountCheck======"
+	Write-Host "||      Author:JC          ||"
+	Write-Host "||      Version:2.0.1      ||"
+	Write-Host "============================="
+	Write-Host "===         选项          ==="
+	Write-Host "| 1 获取域内所有域用户账户"
+	Write-Host "| 2 为域内的所有用户账户尝试注册SPN"
+	Write-Host "| 3 获取现有SPN的凭据的Hash"
+	Write-Host "| 4 爆破获得的Hash"
+	Write-Host "| 5 删除注册的SPN"
+	Write-Host "| 6 全部运行"
+	Write-Host "| 0 EXIT"
 	$choice = Read-Host "请选择一个选项进行操作`n>>"
 	switch($choice){
 		1 {
@@ -227,7 +227,11 @@ Do {
 			Del-SPN $sucSPNList $sucUserList
 			break
 		}
-		0 {	return $false ;break}
-		default {"请重新选择"}
+		0 {	
+			Write-Host "相关结果文件，请到result目录查看"
+			return $false
+			break
+		}
+		default {"请重新选择`n"}
 	}
 }While($true)
