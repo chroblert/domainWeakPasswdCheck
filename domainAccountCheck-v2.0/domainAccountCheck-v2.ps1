@@ -152,18 +152,18 @@ function Crack-ServiceTicket{
 	Write-Host "将破解出的用户名和密码保存到.\result\userAndPasswdList.txt文件中去"
 	$userAndPasswdList | Out-File ".\result\userAndPasswdList.txt"
 }
-# 删除保存下来的kirbi文件
-function Del-ServiceTicket{
-	$isDelet = Read-Host "是否删除下载的kirbi文件`n Y/n"
-	if ($isDelet -eq "Y" -OR $isDelet -eq "yes"){
-		$dirList = Get-ChildItem|select name|%{$_.name}
-		foreach ($line in $dirList){
-			if ($line.split(".")[-1] -eq "kirbi"){
-				# 删除文件
-				Remove-Item $line
-				Write-Host "删+"
-			}
-		}
+function LDAPCheck{
+	Write-Host -ForegroundColor Yellow "使用该项功能需注意，很容易锁住账户"
+	$tmpFile = "./result/tmpPasswd.txt"
+	if(Test-Path "./result/userAndPasswdList.txt"){
+		Get-Content .\result\userAndPasswdList.txt|%{$_.split('|#|')[3]}|sort -Unique | Out-File -Encoding ascii $tmpFile
+	}else{
+		Write-Host -ForegroundColor Yellow "之前没有审计出弱口令，请在result目录下新建tmpPasswd.txt文件，在里面放入密码，每行一个"
+		break
+	}
+	if(Test-Path $tmpFile){
+		Import-Module ./kerberoast/DomainPasswordSpray.ps1
+		Invoke-DomainPasswordSpray -PasswordList $tmpFile -O "LDAPCheckResult.txt"
 	}
 }
 # 创建一个用来保存结果的目录
@@ -184,7 +184,8 @@ Do {
 	Write-Host "| 3 获取现有SPN的凭据的Hash"
 	Write-Host "| 4 爆破获得的Hash"
 	Write-Host "| 5 删除注册的SPN"
-	Write-Host "| 6 全部运行"
+	Write-Host "| 6 使用SPN审计获得的密码通过LDAP方式再次进行审计"
+	Write-Host "| 7 全部运行"
 	Write-Host "| 0 EXIT"
 	$choice = Read-Host "请选择一个选项进行操作`n>>"
 	switch($choice){
@@ -212,6 +213,10 @@ Do {
 			break
 		}
 		6 {
+			LDAPCheck
+			break
+		}
+		7 {
 			# 1. 获取用户
 			Write-Host "获取到所有的域用户账户"
 			$allUserList = Get-UserList
