@@ -128,7 +128,6 @@ function Crack-ServiceTicket{
 		[String] $passwdDictFileName
 	)
 	Write-Host "正在爆破中ing.......请稍等"
-	# $tgsCrackResult = python27 .\kerberoast\tgsrepcrack.py .\Dicts\GaiaPasswd.txt .\*.kirbi
 	if((Test-Path $krbstHashFileName) -and (Test-Path $passwdDictFileName)){
 		.\hashcat\hashcat64.exe -m 13100 -a 0 $krbstHashFileName $passwdDictFileName -o ".\succeed.txt" --force
 		if(Test-Path ".\result\succeed.txt"){
