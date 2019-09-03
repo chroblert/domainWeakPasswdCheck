@@ -195,7 +195,7 @@ Do {
 			break
 		}
 		2 {
-			Read-Host "为每一个域用户账号注册SPN"
+			Write-Host "为每一个域用户账号注册SPN"
 			$sucUserList,$sucSPNList,$faiUserList = Set-SPN $allUserList
 			break
 		}
@@ -208,7 +208,9 @@ Do {
 			break
 		}
 		5 {
-			Read-Host "下面将要为注册SPN成功的域用户账户删除SPN"
+			Write-Host "下面将要为注册SPN成功的域用户账户删除SPN"
+			$sucSPNList = Get-Content "./result/sucSPNList.txt"
+			$sucUserList = Get-Content "./result/sucUserList.txt"
 			Del-SPN $sucSPNList $sucUserList
 			break
 		}
@@ -221,14 +223,14 @@ Do {
 			Write-Host "获取到所有的域用户账户"
 			$allUserList = Get-UserList
 			# 2. 注册SPN
-			Read-Host "为每一个域用户账号注册SPN"
+			Write-Host "为每一个域用户账号注册SPN"
 			$sucUserList,$sucSPNList,$faiUserList = Set-SPN $allUserList
 			# 3. 访问SPN获得ST,并以hashcat模式保存到文件krbstHash.txt中
 			Get-ServiceTicket $krbstHashFile
 			# 4. 使用hashcat爆破ST中hash对应的口令
 			Crack-ServiceTicket $krbstHashFile $passwdDictFile
 			# 5. 删除SPN
-			Read-Host "下面将要为注册SPN成功的域用户账户删除SPN"
+			Write-Host "下面将要为注册SPN成功的域用户账户删除SPN"
 			Del-SPN $sucSPNList $sucUserList
 			break
 		}
